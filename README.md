@@ -65,7 +65,7 @@ Seed: `prisma/seed.ts` — users, courses, lessons, vocab, grammar, universities
 
 1. Импортируй репозиторий на https://vercel.com/new
 2. В Vercel → Settings → Environment Variables добавь:
-   - `DATABASE_URL` = `mongodb+srv://dreamkorea795_db_user:<pass>@cluster0.c9fhrmg.mongodb.net/dreamkorea?retryWrites=true&w=majority&appName=Cluster0`
+   - `DATABASE_URL` = `mongodb+srv://USER:PASSWORD@<your-cluster>.mongodb.net/dreamkorea?retryWrites=true&w=majority&appName=Cluster0`
    - `AUTH_SECRET` (= `NEXTAUTH_SECRET`) — `openssl rand -base64 32`
    - `NEXTAUTH_URL` = `https://<твой-домен>.vercel.app`
    - опционально: `OPENAI_API_KEY`, `CLICK_API_KEY`, `PAYME_API_KEY`
