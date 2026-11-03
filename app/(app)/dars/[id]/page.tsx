@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { darsRequest } from "@/lib/dars-client";
@@ -9,6 +9,8 @@ import { speak } from "@/lib/tts";
 import { youtubeEmbedUrl } from "@/lib/youtube";
 import { playWin } from "@/lib/win-sound";
 import { categoryLabel } from "@/lib/dars-categories";
+import { loadAlifbo, nextAlifboLesson } from "@/lib/alifbo";
+import { loadAlifboExam, thematicLessonsUnlocked } from "@/lib/alifbo-exam";
 import { Volume2, BookOpen, Video, PenLine, ArrowRight, Check, Circle, Play, RotateCcw, AlignLeft, Headphones } from "lucide-react";
 
 type Exercise = { q: string; options: string[]; correct: number };
@@ -31,6 +33,29 @@ const VIDEO_POS = "dk_video_pos";
 const MAX_VOCAB = 35;
 
 export default function UnitPage() {
+  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
+  if (!mounted) return <p className="p-6 text-slate-500">Yuklanmoqda…</p>;
+  return <UnitAccess />;
+}
+
+function subscribe() { return () => {}; }
+
+function UnitAccess() {
+  const progress = loadAlifbo();
+  let admin = false;
+  try { admin = JSON.parse(localStorage.getItem("dk_user") || "{}").role === "ADMIN"; } catch {}
+  if (!admin && !thematicLessonsUnlocked(progress, loadAlifboExam())) {
+    const next = nextAlifboLesson(progress);
+    return <div className="mx-auto max-w-3xl p-6"><Card className="space-y-4 p-6 text-center">
+      <h1 className="text-xl font-bold">Mavzuli darslar hali yopiq</h1>
+      <p>Avval alifboning 4 ta darsini va ORALIQ TESTni yakunlang.</p>
+      <Link className="inline-block font-semibold text-blue-600" href={next ? `/dars/alifbo/${next}` : "/dars/alifbo/imtihon"}>O‘qishni davom ettirish →</Link>
+    </Card></div>;
+  }
+  return <UnitContent />;
+}
+
+function UnitContent() {
   const { id } = useParams<{ id: string }>();
   const [unit, setUnit] = useState<Unit | null>(null);
   const [error, setError] = useState("");

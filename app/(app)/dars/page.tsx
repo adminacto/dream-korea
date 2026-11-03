@@ -8,7 +8,7 @@ import {
   GraduationCap, Folder, Sprout, MessageCircle, UtensilsCrossed, CalendarDays, Music, Plane,
 } from "lucide-react";
 import { ALIFBO_LESSONS, alifboDoneCount, loadAlifbo, nextAlifboLesson, type AlifboProgress } from "@/lib/alifbo";
-import { loadAlifboExam, type AlifboExamResult } from "@/lib/alifbo-exam";
+import { loadAlifboExam, thematicLessonsUnlocked, type AlifboExamResult } from "@/lib/alifbo-exam";
 import { categoryLabel } from "@/lib/dars-categories";
 
 type Unit = { id: string; title: string; topic: string; category?: string; level: string; order: number; videos?: { id: string }[] };
@@ -59,6 +59,10 @@ export default function DarsPage() {
   const [error, setError] = useState("");
   const [alifboProgress] = useState<AlifboProgress>(loadAlifbo);
   const [alifboExam] = useState<AlifboExamResult | null>(loadAlifboExam);
+  const [admin] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try { return JSON.parse(localStorage.getItem("dk_user") || "{}").role === "ADMIN"; } catch { return false; }
+  });
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -183,10 +187,12 @@ export default function DarsPage() {
       );
     })()}
 
+    {!admin && !thematicLessonsUnlocked(alifboProgress, alifboExam) && <Card className="p-4 text-sm text-slate-600">Mavzuli darslar alifboning 4 ta darsi va ORALIQ TEST yakunlangach ochiladi.</Card>}
     <ol className="relative space-y-9 py-2">
       {data.units.map((unit, index) => {
         const p = data.progress.find(p => p.unitId === unit.id);
-        const unlocked = data.units.slice(0, index).every(u => data.progress.some(p => p.unitId === u.id && p.stars > 0));
+        const alphabetReady = thematicLessonsUnlocked(alifboProgress, alifboExam);
+        const unlocked = admin || (alphabetReady && data.units.slice(0, index).every(u => data.progress.some(p => p.unitId === u.id && p.stars > 0)));
         const percent = percentOf(unit, p);
         const th = themeForUnit(unit, index);
         const prevTh = index > 0 ? themeForUnit(data.units[index - 1]!, index - 1) : th;
@@ -200,7 +206,7 @@ export default function DarsPage() {
           const blockUnits = data.units.filter(u => u.order >= from && u.order <= unit.order);
           if (blockUnits.length === BLOCK) {
             const doneCount = blockUnits.filter(bu => percentOf(bu, data.progress.find(pp => pp.unitId === bu.id)) === 100).length;
-            const blockDone = doneCount === BLOCK;
+            const blockDone = admin || (alphabetReady && doneCount === BLOCK);
             const best = data.bests.find(b => b.from === from) ?? null;
             examCard = <li key={`imtihon-${unit.order}`} className="relative">
               <Card className={`relative overflow-hidden flex items-center gap-4 border-0 p-5 ring-1 ${blockDone ? "from-amber-50 via-orange-50 to-white bg-gradient-to-br ring-amber-200/70" : "bg-slate-50 ring-slate-200 opacity-70"}`}>

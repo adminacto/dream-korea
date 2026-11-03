@@ -1,4 +1,4 @@
-import { ALIFBO_LESSONS } from "@/lib/alifbo";
+import { ALIFBO_LESSONS, alifboDoneCount, type AlifboProgress } from "@/lib/alifbo";
 
 export type AlifboExamQuestion = { text: string; options: string[]; answer: string };
 
@@ -21,6 +21,10 @@ export function alifboExamQuestions(): AlifboExamQuestion[] {
 
 const KEY = "dk_alifbo_exam_v1";
 export type AlifboExamResult = { score: number; total: number; attempts: number };
+
+export function thematicLessonsUnlocked(progress: AlifboProgress, exam: AlifboExamResult | null): boolean {
+  return alifboDoneCount(progress) === ALIFBO_LESSONS.length && exam !== null;
+}
 
 export function loadAlifboExam(): AlifboExamResult | null {
   if (typeof window === "undefined") return null;
