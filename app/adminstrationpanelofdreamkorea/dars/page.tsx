@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { speak } from "@/lib/tts";
+import { DARS_CATEGORIES, categoryLabel, type DarsCategory } from "@/lib/dars-categories";
 import { Loader2, Trash2, Pencil, Plus, Volume2, ChevronDown, ChevronUp, BookOpen, Video, Headphones, PenLine, AlignLeft, Save, X, Upload } from "lucide-react";
 
 type Kind = "vocab" | "video" | "grammar" | "listening" | "writing";
 type Counts = { vocab: number; videos: number; grammars: number; listenings: number; writings: number };
-type UnitListItem = { id: string; title: string; topic: string; level: string; order: number; description?: string | null; videos: { id: string; videoUrl: string }[]; _count: Counts };
+type UnitListItem = { id: string; title: string; topic: string; category?: string; level: string; order: number; description?: string | null; videos: { id: string; videoUrl: string }[]; _count: Counts };
 type Item = {
   id: string;
   ko?: string; uz?: string; tr?: string; exampleKo?: string; exampleUz?: string;
@@ -22,7 +23,7 @@ type Item = {
   prompt?: string; criteria?: string; sampleAnswer?: string;
 };
 type Detail = {
-  title: string; topic: string; level: string; order: number; description?: string | null;
+  title: string; topic: string; category?: string; level: string; order: number; description?: string | null;
   vocab: Item[]; videos: Item[]; grammars: Item[]; listenings: Item[]; writings: Item[];
 };
 
@@ -409,6 +410,7 @@ export default function AdminDarsPage() {
   // yaratish formasi
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
+  const [category, setCategory] = useState<DarsCategory>("BOSHLANGICH");
   const [level, setLevel] = useState("TOPIK I");
   const [order, setOrder] = useState("");
   const [desc, setDesc] = useState("");
@@ -431,7 +433,7 @@ export default function AdminDarsPage() {
   async function loadDetail(id: string) {
     const d = await api<Detail>(`/api/dars/${id}`, "GET");
     setDetail(prev => ({ ...prev, [id]: d }));
-    setMeta(prev => ({ ...prev, [id]: { title: d.title, topic: d.topic, level: d.level, order: String(d.order), description: d.description ?? "" } }));
+    setMeta(prev => ({ ...prev, [id]: { title: d.title, topic: d.topic, category: d.category ?? "BOSHLANGICH", level: d.level, order: String(d.order), description: d.description ?? "" } }));
   }
 
   async function toggle(id: string) {
@@ -445,8 +447,8 @@ export default function AdminDarsPage() {
     if (!title.trim() || !topic.trim()) { setError("Unit nomi va mavzusi kerak"); return; }
     setCreating(true); setError("");
     try {
-      await darsRequest("/api/dars", { title: title.trim(), topic: topic.trim(), level, order: Number(nextOrder) || units.length + 1, description: desc.trim() || undefined });
-      setTitle(""); setTopic(""); setDesc(""); setOrder("");
+      await darsRequest("/api/dars", { title: title.trim(), topic: topic.trim(), category, level, order: Number(nextOrder) || units.length + 1, description: desc.trim() || undefined });
+      setTitle(""); setTopic(""); setCategory("BOSHLANGICH"); setDesc(""); setOrder("");
       await refresh();
     } catch (e) { setError((e as Error).message); } finally { setCreating(false); }
   }
@@ -455,7 +457,7 @@ export default function AdminDarsPage() {
     const m = meta[id]; if (!m) return;
     setBusyId(id); setError("");
     try {
-      await api(`/api/dars/${id}`, "PATCH", { title: m.title, topic: m.topic, level: m.level, order: Number(m.order) || 1, description: m.description });
+      await api(`/api/dars/${id}`, "PATCH", { title: m.title, topic: m.topic, category: m.category, level: m.level, order: Number(m.order) || 1, description: m.description });
       await Promise.all([refresh(), loadDetail(id)]);
     } catch (e) { setError((e as Error).message); } finally { setBusyId(null); }
   }
@@ -486,6 +488,7 @@ export default function AdminDarsPage() {
         <div className="grid sm:grid-cols-2 gap-2">
           <Input placeholder="Unit nomi (mas: Salomlashish)" value={title} onChange={e => setTitle(e.target.value)} />
           <Input placeholder="Mavzu: 인사 · Salomlashish (koreys · o‘zbek)" value={topic} onChange={e => setTopic(e.target.value)} />
+          <select value={category} onChange={e => setCategory(e.target.value as DarsCategory)} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm"><option value="" disabled>Kategoriya</option>{DARS_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select>
           <div className="flex gap-2">
             <select value={level} onChange={e => setLevel(e.target.value)} className="h-10 flex-1 rounded-lg border border-slate-200 bg-white px-2 text-sm"><option>TOPIK I</option><option>TOPIK II</option></select>
             <Input type="number" min={1} className="w-24" value={order} onChange={e => setOrder(e.target.value)} placeholder={nextOrder} />
@@ -512,6 +515,7 @@ export default function AdminDarsPage() {
                 <div className="min-w-0">
                   <div className="font-semibold text-slate-900 truncate"><span className="text-blue-600">{u.order})</span> {u.topic || u.title}</div>
                   <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-slate-500">
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">{categoryLabel(u.category ?? "BOSHLANGICH")}</span>
                     <span className="rounded-full bg-slate-100 px-2 py-0.5">{u.level}</span>
                     <span className="rounded-full bg-slate-100 px-2 py-0.5">So‘z {c.vocab}</span>
                     <span className="rounded-full bg-slate-100 px-2 py-0.5">Video {c.videos}</span>
@@ -537,6 +541,7 @@ export default function AdminDarsPage() {
                     <div className="grid sm:grid-cols-2 gap-2">
                       <Input value={m.title} onChange={e => setMetaField(u.id, "title", e.target.value)} placeholder="Nom (kortdagi ichki nom)" />
                       <Input value={m.topic} onChange={e => setMetaField(u.id, "topic", e.target.value)} placeholder="Mavzu: 인사 · Salomlashish" />
+                      <select value={m.category ?? "BOSHLANGICH"} onChange={e => setMetaField(u.id, "category", e.target.value)} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm">{DARS_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select>
                       <select value={m.level} onChange={e => setMetaField(u.id, "level", e.target.value)} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm"><option>TOPIK I</option><option>TOPIK II</option></select>
                       <Input type="number" min={1} value={m.order} onChange={e => setMetaField(u.id, "order", e.target.value)} placeholder="Tartib" />
                     </div>

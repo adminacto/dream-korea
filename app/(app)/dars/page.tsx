@@ -9,8 +9,9 @@ import {
 } from "lucide-react";
 import { ALIFBO_LESSONS, alifboDoneCount, loadAlifbo, nextAlifboLesson, type AlifboProgress } from "@/lib/alifbo";
 import { loadAlifboExam, type AlifboExamResult } from "@/lib/alifbo-exam";
+import { categoryLabel } from "@/lib/dars-categories";
 
-type Unit = { id: string; title: string; topic: string; level: string; order: number; videos?: { id: string }[] };
+type Unit = { id: string; title: string; topic: string; category?: string; level: string; order: number; videos?: { id: string }[] };
 type ProgressRow = { unitId: string; stars: number; vocabDone: boolean; grammarDone: boolean; listeningDone: boolean; videoDone: boolean; homeworkDone: boolean };
 type ExamBest = { from: number; to: number; score: number; total: number; attempts: number };
 
@@ -239,6 +240,7 @@ export default function DarsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-semibold text-slate-500">Unit {unit.order}</span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-blue-700 shadow-sm">{categoryLabel(unit.category ?? "BOSHLANGICH")}</span>
                     <span className={`rounded-full bg-white px-2 py-0.5 text-[10px] font-bold shadow-sm ${th.badge}`}>{unit.level}</span>
                   </div>
                   <h2 className="mt-0.5 truncate font-bold text-slate-900">{displayTitle(unit)}</h2>

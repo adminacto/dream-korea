@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { speak } from "@/lib/tts";
 import { youtubeEmbedUrl } from "@/lib/youtube";
 import { playWin } from "@/lib/win-sound";
+import { categoryLabel } from "@/lib/dars-categories";
 import { Volume2, BookOpen, Video, PenLine, ArrowRight, Check, Circle, Play, RotateCcw, AlignLeft, Headphones } from "lucide-react";
 
 type Exercise = { q: string; options: string[]; correct: number };
 type Unit = {
   order: number;
   title: string; topic: string; level: string; description?: string;
+  category?: string;
   vocab: { id: string; ko: string; uz: string; tr?: string; exampleKo?: string; exampleUz?: string }[];
   videos: { id: string; title: string; videoUrl: string }[];
   grammars: { id: string; title: string; explain: string; pattern?: string; examples: { ko: string; uz: string }[]; exercises: Exercise[] }[];
@@ -181,7 +183,7 @@ export default function UnitPage() {
         <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div aria-hidden className="pointer-events-none absolute -bottom-14 -left-6 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <div className="relative">
-          <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">{unit.level}</span>
+           <div className="flex flex-wrap gap-2"><span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">{categoryLabel(unit.category ?? "BOSHLANGICH")}</span><span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">{unit.level}</span></div>
           <h1 className="mt-2 text-2xl font-extrabold tracking-tight">{orderNo}) {uzPart || topicRaw}</h1>
           <p className="mt-0.5 text-sm font-medium text-blue-100">{orderNo}-dars{koPart ? ` · ${koPart}` : ""}</p>
           {unit.description && <p className="mt-2 text-sm text-blue-100/90">{unit.description}</p>}

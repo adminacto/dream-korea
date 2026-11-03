@@ -27,7 +27,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       prisma.darsWriting.findMany({ where: { unitId: id }, orderBy: { order: "asc" } }),
     ]);
     return Response.json({
-      id: u.id, order: u.order, title: u.title, topic: u.topic, level: u.level, description: u.description, cover: u.cover, seeded: false,
+      id: u.id, order: u.order, title: u.title, topic: u.topic, category: u.category, level: u.level, description: u.description, cover: u.cover, seeded: false,
       vocab, videos, grammars, listenings, writings,
     });
   } catch (e) {
@@ -50,6 +50,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const fields: Record<string, string | null> = {};
     if (b.title) fields.title = String(b.title).trim();
     if (b.topic) fields.topic = String(b.topic).trim();
+    if (b.category) fields.category = String(b.category).trim();
     if (b.level) fields.level = String(b.level).trim();
     if (b.description !== undefined) fields.description = String(b.description).trim() || null;
     if (b.cover !== undefined) fields.cover = String(b.cover).trim() || null;
