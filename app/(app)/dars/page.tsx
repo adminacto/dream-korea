@@ -45,6 +45,15 @@ const THEMES = [
   { icon: Plane, ico: "from-teal-400 to-cyan-600", card: "from-teal-50 via-cyan-50 to-white", ring: "ring-teal-200/70", bar: "from-teal-400 to-cyan-500", btn: "bg-teal-100 text-teal-800 hover:bg-teal-200", badge: "text-teal-700", blob: "bg-teal-200/40", stroke: "#14b8a6" },
 ];
 
+function themeForUnit(unit: Unit, index: number) {
+  const category = (unit.category ?? "BOSHLANGICH").toUpperCase();
+  if (category === "KUNDALIK") return THEMES[1]!;
+  if (category === "GRAMMATIKA") return THEMES[3]!;
+  if (category === "TOPIK") return THEMES[5]!;
+  if (category === "ALIFBO") return THEMES[0]!;
+  return THEMES[index % THEMES.length]!;
+}
+
 export default function DarsPage() {
   const [data, setData] = useState<{ units: Unit[]; progress: ProgressRow[]; bests: ExamBest[]; user: { stars: number; coins: number } } | null>(null);
   const [error, setError] = useState("");
@@ -179,8 +188,8 @@ export default function DarsPage() {
         const p = data.progress.find(p => p.unitId === unit.id);
         const unlocked = data.units.slice(0, index).every(u => data.progress.some(p => p.unitId === u.id && p.stars > 0));
         const percent = percentOf(unit, p);
-        const th = THEMES[index % THEMES.length]!;
-        const prevTh = THEMES[(index - 1 + THEMES.length) % THEMES.length]!;
+        const th = themeForUnit(unit, index);
+        const prevTh = index > 0 ? themeForUnit(data.units[index - 1]!, index - 1) : th;
         const Icon = th.icon;
         const isDone = percent === 100;
 
