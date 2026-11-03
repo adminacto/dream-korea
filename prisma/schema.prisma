@@ -407,7 +407,7 @@ model DarsUnit {
   order       Int      @unique
   title       String
   topic       String
-  category    String   @default("BOSHLANGICH")
+  category    String?
   level       String   @default("A1")
   cover       String?
   description String?
