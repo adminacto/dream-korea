@@ -149,6 +149,11 @@ export function alifboLessonDone(p: AlifboProgress, no: number): boolean {
   return !!row && ALIFBO_STAGES.every((s) => row[s]);
 }
 
+export function alifboLessonUnlocked(p: AlifboProgress, no: number): boolean {
+  return ALIFBO_LESSONS.some(l => l.no === no) &&
+    ALIFBO_LESSONS.filter(l => l.no < no).every(l => alifboLessonDone(p, l.no));
+}
+
 export function alifboDoneCount(p: AlifboProgress): number {
   return ALIFBO_LESSONS.filter((l) => alifboLessonDone(p, l.no)).length;
 }

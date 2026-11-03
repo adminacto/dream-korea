@@ -8,6 +8,7 @@ import {
   GraduationCap, Folder, Sprout, MessageCircle, UtensilsCrossed, CalendarDays, Music, Plane,
 } from "lucide-react";
 import { ALIFBO_LESSONS, alifboDoneCount, loadAlifbo, nextAlifboLesson, type AlifboProgress } from "@/lib/alifbo";
+import { loadAlifboExam, type AlifboExamResult } from "@/lib/alifbo-exam";
 
 type Unit = { id: string; title: string; topic: string; level: string; order: number; videos?: { id: string }[] };
 type ProgressRow = { unitId: string; stars: number; vocabDone: boolean; grammarDone: boolean; listeningDone: boolean; videoDone: boolean; homeworkDone: boolean };
@@ -47,6 +48,7 @@ export default function DarsPage() {
   const [data, setData] = useState<{ units: Unit[]; progress: ProgressRow[]; bests: ExamBest[]; user: { stars: number; coins: number } } | null>(null);
   const [error, setError] = useState("");
   const [alifboProgress] = useState<AlifboProgress>(loadAlifbo);
+  const [alifboExam] = useState<AlifboExamResult | null>(loadAlifboExam);
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -141,6 +143,7 @@ export default function DarsPage() {
       const nextNo = nextAlifboLesson(alifboProgress);
       const nextLesson = nextNo ? ALIFBO_LESSONS.find(l => l.no === nextNo) : undefined;
       const pct = Math.round(done / ALIFBO_LESSONS.length * 100);
+      const examReady = done === ALIFBO_LESSONS.length;
       return (
         <Card className="relative mt-5 overflow-hidden border-0 bg-gradient-to-br from-indigo-50 via-blue-50 to-white p-4 ring-1 ring-blue-200/70 sm:p-5">
           <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-blue-200/40 blur-3xl" />
@@ -156,15 +159,15 @@ export default function DarsPage() {
                 <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all" style={{ width: `${pct}%` }} />
               </div>
               <p className="text-xs font-medium text-slate-500">
-                {done}/{ALIFBO_LESSONS.length} dars · {pct}% · {nextLesson ? `${nextLesson.no}-dars: ${nextLesson.title}` : "Barcha darslar yakunlandi ✅"}
+                {done}/{ALIFBO_LESSONS.length} dars · {pct}% · {examReady ? (alifboExam ? `ORALIQ TEST: ${alifboExam.score}/${alifboExam.total}` : "ORALIQ TEST ochiq") : nextLesson ? `${nextLesson.no}-dars: ${nextLesson.title}` : "Barcha darslar yakunlandi ✅"}
               </p>
             </div>
-            <Link href={`/dars/alifbo/${nextNo ?? 1}`} className="hidden shrink-0 items-center gap-1 rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-200 sm:inline-flex">
-              {nextNo ? "Boshlash" : "Qayta ko&apos;rish"} <ChevronRight className="h-4 w-4" />
+            <Link href={examReady ? "/dars/alifbo/imtihon" : `/dars/alifbo/${nextNo ?? 1}`} className="hidden shrink-0 items-center gap-1 rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-200 sm:inline-flex">
+              {examReady ? (alifboExam ? "Testni qayta topshirish" : "ORALIQ TEST") : "Boshlash"} <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
-          <Link href={`/dars/alifbo/${nextNo ?? 1}`} className="relative mt-3 flex items-center justify-center gap-1 rounded-full bg-blue-100 py-2 text-sm font-semibold text-blue-800 sm:hidden">
-            {nextNo ? "Boshlash" : "Qayta ko&apos;rish"} <ChevronRight className="h-4 w-4" />
+          <Link href={examReady ? "/dars/alifbo/imtihon" : `/dars/alifbo/${nextNo ?? 1}`} className="relative mt-3 flex items-center justify-center gap-1 rounded-full bg-blue-100 py-2 text-sm font-semibold text-blue-800 sm:hidden">
+            {examReady ? (alifboExam ? "Testni qayta topshirish" : "ORALIQ TEST") : "Boshlash"} <ChevronRight className="h-4 w-4" />
           </Link>
         </Card>
       );

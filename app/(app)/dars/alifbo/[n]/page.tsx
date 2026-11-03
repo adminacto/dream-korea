@@ -19,6 +19,8 @@ import {
   STAGE_LABELS,
   loadAlifbo,
   markAlifboStage,
+  alifboLessonUnlocked,
+  nextAlifboLesson,
   type AlifboStage,
 } from "@/lib/alifbo";
 
@@ -26,10 +28,25 @@ export default function AlifboLessonPage() {
   const { n } = useParams<{ n: string }>();
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   if (!mounted) return <p className="p-6 text-slate-500">Yuklanmoqda…</p>;
-  return Number(n) === 4 ? <SyllableLesson /> : <AlphabetLesson key={n} no={Number(n)} />;
+  return <LessonAccess key={n} no={Number(n)} />;
 }
 
 function subscribe() { return () => {}; }
+
+function LessonAccess({ no }: { no: number }) {
+  const progress = loadAlifbo();
+  let admin = false;
+  try { admin = JSON.parse(localStorage.getItem("dk_user") || "{}").role === "ADMIN"; } catch {}
+  if (ALIFBO_LESSONS.some(l => l.no === no) && !admin && !alifboLessonUnlocked(progress, no)) {
+    return <div className="mx-auto max-w-3xl p-6"><Card className="space-y-4 p-6 text-center">
+      <Lock className="mx-auto h-8 w-8 text-slate-400" />
+      <h1 className="text-xl font-bold">Bu dars hali yopiq</h1>
+      <p>Avval oldingi alifbo darslarini to‘liq yakunlang.</p>
+      <Link className="inline-block font-semibold text-blue-600" href={`/dars/alifbo/${nextAlifboLesson(progress) ?? 1}`}>Ochiq darsga o‘tish →</Link>
+    </Card></div>;
+  }
+  return no === 4 ? <SyllableLesson /> : <AlphabetLesson no={no} />;
+}
 
 function AlphabetLesson({ no }: { no: number }) {
   const lesson = ALIFBO_LESSONS.find((l) => l.no === no);

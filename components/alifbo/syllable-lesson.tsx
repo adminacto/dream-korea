@@ -39,7 +39,7 @@ const BATCHIM = [
 
 const WRITING = [
   { prompt: "Undosh + tik unli", hint: "ㄱ + ㅏ", answer: "가" },
-  { prompt: "Tovushsiz undosh + tik unli", hint: "ㅇ + ㅗ", answer: "오" },
+  { prompt: "Tovushsiz undosh + yotiq unli", hint: "ㅇ + ㅗ", answer: "오" },
   { prompt: "Undosh + tik unli + 받침", hint: "ㅂ + ㅏ + ㅂ", answer: "밥" },
   { prompt: "Undosh + yotiq unli + 받침", hint: "ㅁ + ㅜ + ㄴ", answer: "문" },
   { prompt: "Tovushsiz undosh + tik unli + 받침", hint: "ㅇ + ㅏ + ㄴ", answer: "안" },
@@ -60,12 +60,12 @@ export function SyllableLesson() {
   const [progress, setProgress] = useState<Partial<Record<Stage, boolean>>>(loadProgress);
   const [combine, setCombine] = useState<Record<number, string>>({});
   const [writing, setWriting] = useState<Record<number, string>>({});
-  const [wrong, setWrong] = useState<string | null>(null);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [isStaff] = useState(() => {
     if (typeof window === "undefined") return false;
     try {
       const u = JSON.parse(localStorage.getItem("dk_user") || "{}");
-      return u.role === "ADMIN" || u.role === "TEACHER";
+      return u.role === "ADMIN";
     } catch { return false; }
   });
 
@@ -77,17 +77,17 @@ export function SyllableLesson() {
     markAlifboStage(4, ({ video: "video", combine: "table", batchim: "cards", writing: "match" } as const)[stage]);
   };
   const skip = (stage: Stage) => complete(stage);
-  const check = (value: string, answer: string, key: string) => {
-    if (value.trim() === answer) return true;
-    setWrong(key);
-    window.setTimeout(() => setWrong(v => v === key ? null : v), 650);
-    return false;
+  const check = (items: { answer: string }[], values: Record<number, string>, prefix: string) => {
+    const results = Object.fromEntries(items.map((x, i) => [ `${prefix}${i}`, (values[i] || "").trim().normalize("NFC") === x.answer ]));
+    setChecked(previous => ({ ...previous, ...results }));
+    return Object.values(results).every(Boolean);
   };
+  const feedback = (key: string) => checked[key] === true ? "border-emerald-400 bg-emerald-50" : checked[key] === false ? "border-red-400 bg-red-50" : "";
   const submitCombine = () => {
-    if (COMBINE.every((x, i) => check(combine[i] || "", x.answer, `c${i}`))) complete("combine");
+    if (check(COMBINE, combine, "c")) complete("combine");
   };
   const submitWriting = () => {
-    if (WRITING.every((x, i) => check(writing[i] || "", x.answer, `w${i}`))) complete("writing");
+    if (check(WRITING, writing, "w")) complete("writing");
   };
   const allDone = STAGES.every(s => progress[s]);
 
@@ -113,7 +113,14 @@ export function SyllableLesson() {
       <LessonStage stage="combine" active={active} done={!!progress.combine} isStaff={isStaff} onSkip={skip} icon={<Table2 className="h-5 w-5" />} title="② 2 harfni qo'shish">
         <p className="text-sm text-slate-600">Bo'sh kataklarga to'g'ri koreys bo'g'inini yozing. To'g'ri javob yashil, noto'g'ri javob qizil bo'ladi.</p>
         <div className="overflow-x-auto rounded-2xl border border-violet-100">
-          <table className="w-full min-w-[430px] border-collapse text-sm"><thead><tr className="bg-violet-50"><th className="border p-2 text-left">Undosh + unli</th><th className="border p-2">Bo'g'in</th><th className="border p-2">O'qilishi</th></tr></thead><tbody>{COMBINE.map((x, i) => <tr key={x.formula}><td className="border p-2 font-semibold">{x.formula}</td><td className="border p-2"><Input value={combine[i] || ""} onChange={e => setCombine(v => ({ ...v, [i]: e.target.value }))} className={`text-center text-xl font-bold ${wrong === `c${i}` ? "border-red-400 bg-red-50" : ""}`} placeholder="?" /></td><td className="border p-2 text-center text-slate-500">{x.read}</td></tr>)}</tbody></table>
+          <table className="w-full min-w-[430px] border-collapse text-sm">
+            <thead><tr className="bg-violet-50"><th className="border p-2 text-left">Undosh + unli</th><th className="border p-2">Bo'g'in</th><th className="border p-2">O'qilishi</th></tr></thead>
+            <tbody>{COMBINE.map((x, i) => <tr key={x.formula}>
+              <td className="border p-2 font-semibold">{x.formula}</td>
+              <td className="border p-2"><Input aria-label={`${x.formula} — bo'g'in`} aria-invalid={checked[`c${i}`] === false} value={combine[i] || ""} onChange={e => { setCombine(v => ({ ...v, [i]: e.target.value })); setChecked(v => { const next = { ...v }; delete next[`c${i}`]; return next; }); }} className={`text-center text-xl font-bold ${feedback(`c${i}`)}`} placeholder="?" /></td>
+              <td className="border p-2 text-center text-slate-500">{x.read}</td>
+            </tr>)}</tbody>
+          </table>
         </div>
         <Button onClick={submitCombine}>Tekshirish</Button>
       </LessonStage>
@@ -126,11 +133,14 @@ export function SyllableLesson() {
 
       <LessonStage stage="writing" active={active} done={!!progress.writing} isStaff={isStaff} onSkip={skip} icon={<PenLine className="h-5 w-5" />} title="④ Yozish mashqi">
         <p className="text-sm text-slate-600">Jadvaldagi 5 ta mashqni bajaring. Keyinroq admin shu massivga yangi savollar qo'shishi mumkin.</p>
-        <div className="space-y-3">{WRITING.map((x, i) => <div key={x.answer} className={`rounded-2xl border p-3 ${wrong === `w${i}` ? "border-red-400 bg-red-50" : "border-slate-200 bg-white"}`}><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-semibold text-slate-500">{i + 1}. {x.prompt}</p><p className="mt-1 text-sm text-slate-700">{x.hint}</p></div><span className="text-2xl font-bold text-violet-700">{writing[i] === x.answer ? x.answer : "□"}</span></div><Input value={writing[i] || ""} onChange={e => setWriting(v => ({ ...v, [i]: e.target.value }))} placeholder="Bo'g'inni yozing" className="mt-2 text-lg font-bold" /></div>)}</div>
+        <div className="space-y-3">{WRITING.map((x, i) => <div key={`${x.hint}-${i}`} className={`rounded-2xl border p-3 ${feedback(`w${i}`) || "border-slate-200 bg-white"}`}>
+          <div className="flex items-center justify-between gap-2"><div><p className="text-xs font-semibold text-slate-500">{i + 1}. {x.prompt}</p><p className="mt-1 text-sm text-slate-700">{x.hint}</p></div><span className="text-2xl font-bold text-violet-700">{checked[`w${i}`] === true ? "✓" : checked[`w${i}`] === false ? "✗" : "□"}</span></div>
+          <Input aria-label={`${i + 1}. ${x.hint}`} aria-invalid={checked[`w${i}`] === false} value={writing[i] || ""} onChange={e => { setWriting(v => ({ ...v, [i]: e.target.value })); setChecked(v => { const next = { ...v }; delete next[`w${i}`]; return next; }); }} placeholder="Bo'g'inni yozing" className="mt-2 text-lg font-bold" />
+        </div>)}</div>
         <Button onClick={submitWriting}>Tekshirish va yakunlash</Button>
       </LessonStage>
 
-      {allDone && <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 p-5 ring-1 ring-emerald-200"><h2 className="text-xl font-bold text-emerald-700">🎉 4-dars yakunlandi!</h2><p className="mt-1 text-sm text-emerald-700">Alifbo va yozish asoslari tugadi. Endi mavzuli darslarga o'tishingiz mumkin.</p><Link href="/dars" className="mt-3 inline-flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white">Mavzuli darslarga o'tish <ChevronRight className="h-4 w-4" /></Link></Card>}
+      {allDone && <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 p-5 ring-1 ring-emerald-200"><h2 className="text-xl font-bold text-emerald-700">🎉 4-dars yakunlandi!</h2><p className="mt-1 text-sm text-emerald-700">Alifbo va yozish asoslari tugadi. Endi oraliq testni bajaring.</p><Link href="/dars/alifbo/imtihon" className="mt-3 inline-flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white">ORALIQ TESTga o'tish <ChevronRight className="h-4 w-4" /></Link></Card>}
     </div>
   );
 }
