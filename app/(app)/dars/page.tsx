@@ -7,6 +7,7 @@ import {
   Star, Coins, Lock, ClipboardCheck, Award, ChevronRight, Loader2,
   GraduationCap, Folder, Sprout, MessageCircle, UtensilsCrossed, CalendarDays, Music, Plane,
 } from "lucide-react";
+import { ALIFBO_LESSONS, alifboDoneCount, loadAlifbo, nextAlifboLesson, type AlifboProgress } from "@/lib/alifbo";
 
 type Unit = { id: string; title: string; topic: string; level: string; order: number; videos?: { id: string }[] };
 type ProgressRow = { unitId: string; stars: number; vocabDone: boolean; grammarDone: boolean; listeningDone: boolean; videoDone: boolean; homeworkDone: boolean };
@@ -45,6 +46,7 @@ const THEMES = [
 export default function DarsPage() {
   const [data, setData] = useState<{ units: Unit[]; progress: ProgressRow[]; bests: ExamBest[]; user: { stars: number; coins: number } } | null>(null);
   const [error, setError] = useState("");
+  const [alifboProgress] = useState<AlifboProgress>(loadAlifbo);
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -131,6 +133,42 @@ export default function DarsPage() {
         <Link className="mt-2 inline-block font-semibold text-blue-600 hover:underline" href="/courses">Mavjud kurslarni ochish →</Link>
       </Card>
     )}
+
+    {/* Koreys alifbosi — buyurtmachi ТЗ dagi birinchi kurs. Bu kurs mustaqil
+        progress bilan ishlaydi va oddiy mavzular boshlanishidan oldin ko'rinadi. */}
+    {(() => {
+      const done = alifboDoneCount(alifboProgress);
+      const nextNo = nextAlifboLesson(alifboProgress);
+      const nextLesson = nextNo ? ALIFBO_LESSONS.find(l => l.no === nextNo) : undefined;
+      const pct = Math.round(done / ALIFBO_LESSONS.length * 100);
+      return (
+        <Card className="relative mt-5 overflow-hidden border-0 bg-gradient-to-br from-indigo-50 via-blue-50 to-white p-4 ring-1 ring-blue-200/70 sm:p-5">
+          <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-blue-200/40 blur-3xl" />
+          <div className="relative flex items-center gap-4">
+            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-3xl text-white shadow-lg shadow-blue-300/40">한</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-blue-700">1-kategoriya · Koreys alifbosi</span>
+                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-indigo-700 shadow-sm">한글</span>
+              </div>
+              <h2 className="mt-0.5 font-bold text-slate-900">Koreys alifbosini o&apos;rganish</h2>
+              <div className="my-2 h-2.5 overflow-hidden rounded-full bg-white ring-1 ring-blue-100">
+                <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all" style={{ width: `${pct}%` }} />
+              </div>
+              <p className="text-xs font-medium text-slate-500">
+                {done}/{ALIFBO_LESSONS.length} dars · {pct}% · {nextLesson ? `${nextLesson.no}-dars: ${nextLesson.title}` : "Barcha darslar yakunlandi ✅"}
+              </p>
+            </div>
+            <Link href={`/dars/alifbo/${nextNo ?? 1}`} className="hidden shrink-0 items-center gap-1 rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-200 sm:inline-flex">
+              {nextNo ? "Boshlash" : "Qayta ko&apos;rish"} <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <Link href={`/dars/alifbo/${nextNo ?? 1}`} className="relative mt-3 flex items-center justify-center gap-1 rounded-full bg-blue-100 py-2 text-sm font-semibold text-blue-800 sm:hidden">
+            {nextNo ? "Boshlash" : "Qayta ko&apos;rish"} <ChevronRight className="h-4 w-4" />
+          </Link>
+        </Card>
+      );
+    })()}
 
     <ol className="relative space-y-9 py-2">
       {data.units.map((unit, index) => {
