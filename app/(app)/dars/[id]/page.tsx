@@ -18,6 +18,7 @@ type Unit = {
   order: number;
   title: string; topic: string; level: string; description?: string;
   category?: string;
+  cover?: string | null;
   vocab: { id: string; ko: string; uz: string; tr?: string; exampleKo?: string; exampleUz?: string }[];
   videos: { id: string; title: string; videoUrl: string }[];
   grammars: { id: string; title: string; explain: string; pattern?: string; examples: { ko: string; uz: string }[]; exercises: Exercise[] }[];
@@ -237,7 +238,7 @@ function UnitContent() {
     <Link href="/dars" className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:gap-2 transition-all">← Darslar</Link>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>}
     {!unit ? <div className="space-y-4"><div className="h-32 animate-pulse rounded-3xl bg-gradient-to-br from-blue-100 to-indigo-100" /><div className="h-40 animate-pulse rounded-3xl bg-white/70" /><div className="h-40 animate-pulse rounded-3xl bg-white/70" /></div> : <>
-      <header className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.hero} p-6 text-white shadow-lg shadow-blue-500/20 anim-fade-up`}>
+      <header className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.hero} p-6 text-white shadow-lg shadow-blue-500/20 anim-fade-up`} style={unit.cover ? { backgroundImage: `linear-gradient(110deg, rgba(11,26,61,.9), rgba(37,99,235,.62)), url(${JSON.stringify(unit.cover).slice(1, -1)})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
         <div aria-hidden className={`pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full ${theme.glow} blur-2xl`} />
         <div aria-hidden className="pointer-events-none absolute -bottom-14 -left-6 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <span aria-hidden className="pointer-events-none absolute right-7 top-4 select-none text-4xl opacity-70">{theme.decoration}</span>
