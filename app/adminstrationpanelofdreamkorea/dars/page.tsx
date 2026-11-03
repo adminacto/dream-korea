@@ -482,6 +482,17 @@ export default function AdminDarsPage() {
         <h1 className="text-2xl font-bold">Darslar · Unit boshqaruvi</h1>
         <p className="text-sm text-slate-500">Unit yaratish, tahrirlash va barcha bo‘limlarni (video, grammatika, tinglash, so‘zlar, yozish) to‘liq boshqarish.</p>
       </div>
+      <Card className="border-blue-100 bg-blue-50/60 p-4">
+        <p className="text-xs font-bold uppercase tracking-wide text-blue-700">Yagona dars shabloni</p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-700">
+          <span className="rounded-full bg-white px-2.5 py-1">① Video · YouTube</span><span>→</span>
+          <span className="rounded-full bg-white px-2.5 py-1">② Grammatika</span><span>→</span>
+          <span className="rounded-full bg-white px-2.5 py-1">③ Tinglash</span><span>→</span>
+          <span className="rounded-full bg-white px-2.5 py-1">④ Lug‘at</span><span>→</span>
+          <span className="rounded-full bg-white px-2.5 py-1">⑤ Yozish</span>
+        </div>
+        <p className="mt-2 text-xs text-slate-600">Har bir yangi mavzuni shu tartibda to‘ldiring. Savollar va mashqlar sonini keyin ham kengaytirish mumkin.</p>
+      </Card>
       {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       <Card className="space-y-3 p-5">
