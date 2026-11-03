@@ -29,6 +29,38 @@ type WritingAttempt = { id: string; score: number | null; feedback: string | nul
 type UnitRef = { id: string; order: number; topic: string };
 type ProgressRow = { unitId: string; stars: number; vocabDone: boolean; grammarDone: boolean; listeningDone: boolean; videoDone: boolean };
 
+function lessonTheme(unit: Pick<Unit, "category" | "topic" | "title">) {
+  const text = `${unit.topic} ${unit.title}`.toLowerCase();
+  if (text.includes("salomlashish") || text.includes("인사")) return {
+    hero: "from-sky-700 via-blue-600 to-violet-600",
+    glow: "bg-pink-300/25",
+    badge: "Salomlashish · 인사",
+    icon: "👋",
+    decoration: "🌸",
+  };
+  if (unit.category === "GRAMMATIKA") return {
+    hero: "from-violet-700 via-purple-600 to-fuchsia-600",
+    glow: "bg-fuchsia-300/25",
+    badge: "Grammatika",
+    icon: "✍️",
+    decoration: "✦",
+  };
+  if (unit.category === "TOPIK") return {
+    hero: "from-teal-700 via-cyan-600 to-blue-600",
+    glow: "bg-cyan-300/25",
+    badge: "TOPIK tayyorgarlik",
+    icon: "🎯",
+    decoration: "✦",
+  };
+  return {
+    hero: "from-[#1e3a8a] via-[#2563eb] to-[#7c3aed]",
+    glow: "bg-white/10",
+    badge: "Koreys tili darsi",
+    icon: "📚",
+    decoration: "🌸",
+  };
+}
+
 const VIDEO_POS = "dk_video_pos";
 const MAX_VOCAB = 35;
 
@@ -199,21 +231,26 @@ function UnitContent() {
   const koPart = hasSep ? topicRaw.split("·")[0].trim() : "";
   const uzPart = hasSep ? topicRaw.split("·").slice(1).join("·").trim() : topicRaw;
   const orderNo = unit?.order ?? 1;
+  const theme = unit ? lessonTheme(unit) : lessonTheme({ category: "", topic: "", title: "" });
 
   return <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
     <Link href="/dars" className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:gap-2 transition-all">← Darslar</Link>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>}
     {!unit ? <div className="space-y-4"><div className="h-32 animate-pulse rounded-3xl bg-gradient-to-br from-blue-100 to-indigo-100" /><div className="h-40 animate-pulse rounded-3xl bg-white/70" /><div className="h-40 animate-pulse rounded-3xl bg-white/70" /></div> : <>
-      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e3a8a] via-[#2563eb] to-[#7c3aed] p-6 text-white shadow-lg shadow-blue-500/20 anim-fade-up">
-        <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+      <header className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.hero} p-6 text-white shadow-lg shadow-blue-500/20 anim-fade-up`}>
+        <div aria-hidden className={`pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full ${theme.glow} blur-2xl`} />
         <div aria-hidden className="pointer-events-none absolute -bottom-14 -left-6 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <span aria-hidden className="pointer-events-none absolute right-7 top-4 select-none text-4xl opacity-70">{theme.decoration}</span>
         <div className="relative">
-           <div className="flex flex-wrap gap-2"><span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">{categoryLabel(unit.category ?? "BOSHLANGICH")}</span><span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">{unit.level}</span></div>
+          <div className="flex flex-wrap items-center gap-2"><span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold ring-1 ring-white/20"><span aria-hidden>{theme.icon}</span>{theme.badge}</span><span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">{categoryLabel(unit.category ?? "BOSHLANGICH")}</span><span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">{unit.level}</span></div>
           <h1 className="mt-2 text-2xl font-extrabold tracking-tight">{orderNo}) {uzPart || topicRaw}</h1>
           <p className="mt-0.5 text-sm font-medium text-blue-100">{orderNo}-dars{koPart ? ` · ${koPart}` : ""}</p>
           {unit.description && <p className="mt-2 text-sm text-blue-100/90">{unit.description}</p>}
         </div>
       </header>
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-600 shadow-sm" aria-label="Dars shabloni">
+        <span className="text-blue-700">Yagona dars shabloni:</span><span>① Video</span><span>→</span><span>② Grammatika</span><span>→</span><span>③ Tinglash</span><span>→</span><span>④ Lug‘at</span><span>→</span><span>⑤ Yozish</span>
+      </div>
 
       {/* a) Video */}
       <Card className={`space-y-4 overflow-hidden p-5 border-0 ring-1 ring-blue-100 ${locked.video ? "opacity-60" : ""}`}><h2 className="flex items-center gap-2 text-xl font-bold"><span className="grid h-8 w-8 place-items-center rounded-xl bg-blue-50 text-blue-600"><Video className="h-4.5 w-4.5" /></span> a) Video Dars {secBadge(secDone.video)}</h2>{!unit.videos.length && <p className="text-slate-500">Bu unitga video hali qo‘shilmagan.</p>}{hasVideo && doneFooter(secDone.video, "video", <Button disabled={videoBusy} onClick={acceptVideo}><Play className="mr-2 h-4 w-4" />{videoBusy ? "Qabul qilinmoqda…" : "Video ko`rib boldim"}</Button>)}{unit.videos.map(v => <div key={v.id}><h3 className="mb-2 font-bold">{v.title}</h3>{youtubeEmbedUrl(v.videoUrl) ? <iframe title={v.title} src={youtubeEmbedUrl(v.videoUrl)!} className="aspect-video w-full rounded-xl" allowFullScreen /> : <video ref={el => { videoRefs.current[v.id] = el; }} controls preload="metadata" src={v.videoUrl} className="w-full rounded-xl" onLoadedMetadata={e => { try { const m = JSON.parse(localStorage.getItem(VIDEO_POS) || "{}"); const t = Number(m[v.id]); if (t > 0 && e.currentTarget.duration > t) e.currentTarget.currentTime = t; } catch {} }} onTimeUpdate={e => { if (Math.floor(e.currentTarget.currentTime) % 5 === 0) saveVideoPos(v.id, e.currentTarget.currentTime); }} />}</div>)}</Card>
