@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { speak } from "@/lib/tts";
 import { markAlifboStage } from "@/lib/alifbo";
+import { syncAlifboStage } from "@/lib/alifbo-server";
 
 type Stage = "video" | "combine" | "batchim" | "writing";
 const STAGES: Stage[] = ["video", "combine", "batchim", "writing"];
@@ -74,7 +75,9 @@ export function SyllableLesson() {
     const next = { ...progress, [stage]: true };
     setProgress(next);
     saveProgress(next);
-    markAlifboStage(4, ({ video: "video", combine: "table", batchim: "cards", writing: "match" } as const)[stage]);
+    const alphabetStage = ({ video: "video", combine: "table", batchim: "cards", writing: "match" } as const)[stage];
+    markAlifboStage(4, alphabetStage);
+    void syncAlifboStage(4, alphabetStage);
   };
   const skip = (stage: Stage) => complete(stage);
   const check = (items: { answer: string }[], values: Record<number, string>, prefix: string) => {

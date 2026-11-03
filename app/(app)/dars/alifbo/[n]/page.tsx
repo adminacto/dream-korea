@@ -3,7 +3,7 @@
 // ① video → ② jadval → ③ kartochka → ④ test (100%) → ⑤ natija.
 // O'quvchi bosqichni tugatmasdan keyingisiga o'tolmaydi.
 // Admin/Ustoz — "Tez o'tish" bilan istalgan bosqichni ochib ko'rishi mumkin.
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import {
   nextAlifboLesson,
   type AlifboStage,
 } from "@/lib/alifbo";
+import { fetchServerAlifbo, mergeServerAlifbo, syncAlifboStage } from "@/lib/alifbo-server";
 
 export default function AlifboLessonPage() {
   const { n } = useParams<{ n: string }>();
@@ -58,6 +59,23 @@ function AlphabetLesson({ no }: { no: number }) {
     } catch { return false; }
   });
 
+  useEffect(() => {
+    let active = true;
+    fetchServerAlifbo().then(server => {
+      if (!active || !server) return;
+      const merged = mergeServerAlifbo(loadAlifbo(), Object.entries(server).map(([lessonNo, row]) => ({
+        lessonNo: Number(lessonNo),
+        video: !!row.video,
+        table: !!row.table,
+        cards: !!row.cards,
+        match: !!row.match,
+      })));
+      const next = merged[String(no)] ?? {};
+      setStages(next);
+    });
+    return () => { active = false; };
+  }, [no]);
+
   if (!lesson) {
     return (
       <div className="mx-auto max-w-3xl space-y-4 p-4 sm:p-6">
@@ -73,6 +91,7 @@ function AlphabetLesson({ no }: { no: number }) {
   function complete(stage: AlifboStage) {
     markAlifboStage(no, stage);
     setStages((s) => ({ ...s, [stage]: true }));
+    void syncAlifboStage(no, stage);
   }
 
   const activeStage = ALIFBO_STAGES.find((s) => !stages[s]) ?? "match";

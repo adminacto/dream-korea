@@ -10,6 +10,7 @@ import {
 import { ALIFBO_LESSONS, alifboDoneCount, loadAlifbo, nextAlifboLesson, type AlifboProgress } from "@/lib/alifbo";
 import { loadAlifboExam, thematicLessonsUnlocked, type AlifboExamResult } from "@/lib/alifbo-exam";
 import { categoryLabel } from "@/lib/dars-categories";
+import { fetchServerAlifbo, mergeServerAlifbo } from "@/lib/alifbo-server";
 
 type Unit = { id: string; title: string; topic: string; category?: string; level: string; order: number; videos?: { id: string }[] };
 type ProgressRow = { unitId: string; stars: number; vocabDone: boolean; grammarDone: boolean; listeningDone: boolean; videoDone: boolean; homeworkDone: boolean };
@@ -57,7 +58,7 @@ function themeForUnit(unit: Unit, index: number) {
 export default function DarsPage() {
   const [data, setData] = useState<{ units: Unit[]; progress: ProgressRow[]; bests: ExamBest[]; user: { stars: number; coins: number } } | null>(null);
   const [error, setError] = useState("");
-  const [alifboProgress] = useState<AlifboProgress>(loadAlifbo);
+  const [alifboProgress, setAlifboProgress] = useState<AlifboProgress>(loadAlifbo);
   const [alifboExam] = useState<AlifboExamResult | null>(loadAlifboExam);
   const [admin] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -65,6 +66,12 @@ export default function DarsPage() {
   });
   useEffect(() => {
     let active = true;
+    fetchServerAlifbo().then(server => {
+      if (!active || !server) return;
+      const rows = Object.entries(server).map(([lessonNo, row]) => ({ lessonNo: Number(lessonNo), video: !!row.video, table: !!row.table, cards: !!row.cards, match: !!row.match }));
+      const merged = mergeServerAlifbo(loadAlifbo(), rows);
+      setAlifboProgress(merged);
+    });
     Promise.all([
       darsRequest<{ units: Unit[] }>("/api/dars"),
       darsRequest<{ progress: ProgressRow[]; user: { stars: number; coins: number } }>("/api/dars/progress"),
