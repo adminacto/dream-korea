@@ -48,6 +48,8 @@ model User {
   regIp       String?
   // Sessiyalarni bekor qilish: logout/ban'da +1 — eski tokenlar yaroqsiz bo'ladi (null = 0)
   tokenVersion Int?
+  monthlyFee Int?
+  lessonHours Float?
   // Telefonning normallashtirilgan kaliti (lib/phone.ts phoneKey) — tez unikal tekshiruv
   phoneKey    String?
   // Talaba parolining shifrlangan nusxasi (AES-256-GCM, kalit AUTH_SECRET'dan).
@@ -61,6 +63,7 @@ model User {
   testAttempts   TestAttempt[]
   admissions     Admission[]
   payments       Payment[]
+  paymentMonths  PaymentMonth[]
   notifications  Notification[]
   achievements   Achievement[]
   certificates   Certificate[]
@@ -338,6 +341,10 @@ model Payment {
   amount    Int
   method    String
   month     String?
+  billingMonth String?
+  operationType String?
+  operationDate String?
+  voidedAt DateTime?
   note      String?
   status    PaymentStatus @default(PENDING)
   // Audit: kim yaratdi / kim "to'landi" deb belgiladi
@@ -345,6 +352,35 @@ model Payment {
   paidById    String?     @db.ObjectId
   paidAt      DateTime?
   createdAt DateTime      @default(now())
+  @@index([userId, billingMonth])
+  @@index([billingMonth, status])
+}
+
+// Deterministic _id = hash(userId, billingMonth); optional tuition means that
+// no trustworthy historical tariff is known, NOT a zero-cost course.
+model PaymentMonth {
+  id           String   @id @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  user         User     @relation(fields: [userId], references: [id])
+  billingMonth String
+  tuition      Int?
+  lessonHours  Float?
+  teacherIds   String[]
+  teacherNames String[]
+  revision     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@index([userId, billingMonth])
+  @@index([billingMonth])
+}
+
+// Transactional idempotency receipt. Deterministic primary key avoids a unique
+// nullable index on old payments and protects retries across all mutations.
+model PaymentRequest {
+  id          String   @id @map("_id") @db.ObjectId
+  fingerprint String
+  result      Json
+  createdAt   DateTime @default(now())
 }
 
 model News {

@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { CreditCard } from "lucide-react";
-import { toast } from "sonner";
 import { PaymentsList, type PayRow } from "@/components/payments-list";
 
 type Group = { id: string; name: string };
@@ -15,7 +14,6 @@ export default function TeacherPaymentsPage() {
   const [groupId, setGroupId] = useState("");
   const [payments, setPayments] = useState<PayRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [markingId, setMarkingId] = useState("");
 
   async function load() {
     setLoading(true);
@@ -30,22 +28,6 @@ export default function TeacherPaymentsPage() {
   }
   useEffect(() => { queueMicrotask(() => { void load(); }); }, [groupId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // PENDING → PAID (tasdiqlash) — o'quvchiga "muvaffaqiyatli to'landi" bildirishnomasi
-  async function markPaid(p: PayRow) {
-    if (!confirm(`${p.user.name} — ${p.amount.toLocaleString("uz-UZ")} so'm to'landi deb tasdiqlaysizmi?`)) return;
-    setMarkingId(p.id);
-    try {
-      const r = await fetch("/api/payments", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...authHeader() },
-        body: JSON.stringify({ id: p.id, status: "PAID" }),
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "O'zgartirib bo'lmadi");
-      toast.success("To'lov tasdiqlandi — o'quvchiga yuborildi");
-      load();
-    } catch (e) { toast.error((e as Error).message); } finally { setMarkingId(""); }
-  }
 
   return (
     <div className="mx-auto max-w-[1100px] p-4 lg:p-6 space-y-4">
@@ -60,7 +42,7 @@ export default function TeacherPaymentsPage() {
         </select>
       </div>
 
-      <PaymentsList payments={payments} loading={loading} onRefresh={load} onMarkPaid={markPaid} markingId={markingId} />
+      <PaymentsList payments={payments.filter(p => !(p as PayRow & { voidedAt?: string; operationType?: string }).voidedAt && (p as PayRow & { operationType?: string }).operationType !== "REFUND")} loading={loading} onRefresh={load} />
     </div>
   );
 }
