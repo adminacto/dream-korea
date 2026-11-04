@@ -53,6 +53,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const { id } = await params;
   if (admin.id && String(admin.id) === id) return Response.json({ error: "O'z hisobingizni o'chirib bo'lmaydi" }, { status: 400 });
   try {
+    const financial = await prisma.payment.count({ where: { userId: id } });
+    const monthlyAccounts = await prisma.paymentMonth.count({ where: { userId: id } });
+    if (financial > 0 || monthlyAccounts > 0) {
+      return Response.json({ error: "Moliyaviy tarixga ega o‘quvchini o‘chirib bo‘lmaydi. Avval hisobni arxivlang." }, { status: 409 });
+    }
     // bog'liq yozuvlarni avval tozalash (MongoDB)
     await prisma.enrollment.deleteMany({ where: { userId: id } });
     await prisma.lessonProgress.deleteMany({ where: { userId: id } });
