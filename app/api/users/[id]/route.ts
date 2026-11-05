@@ -61,6 +61,23 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const { id } = await params;
   if (admin.id && String(admin.id) === id) return Response.json({ error: "O'z hisobingizni o'chirib bo'lmaydi" }, { status: 400 });
   try {
+    // Ustoz hali guruhlarga biriktirilgan yoki uy vazifalari muallifi bo'lsa —
+    // o'chirishni to'xtatamiz: aks holda guruhlar ustozsiz qoladi va vazifalar
+    // egasiz qoladi. Avval guruhlarni boshqa ustozga o'tkazish kerak.
+    const target = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (!target) return Response.json({ error: "Foydalanuvchi topilmadi" }, { status: 404 });
+    if (target.role === "TEACHER") {
+      const [groups, homework] = await Promise.all([
+        prisma.group.count({ where: { teacherId: id } }),
+        prisma.homework.count({ where: { teacherId: id } }),
+      ]);
+      if (groups > 0 || homework > 0) {
+        return Response.json({
+          error: `Bu ustozda ${groups} ta guruh va ${homework} ta uy vazifasi bor. Avval guruhlarni boshqa ustozga o‘tkazing, keyin o‘chiring.`,
+          code: "TEACHER_HAS_ASSIGNMENTS",
+        }, { status: 409 });
+      }
+    }
     const financial = await prisma.payment.count({ where: { userId: id } });
     if (financial > 0) {
       return Response.json({
